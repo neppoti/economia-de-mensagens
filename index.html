@@ -198,9 +198,6 @@ th{font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;
 tr.sel td{color:var(--ink);font-weight:600}
 tr.sel td:first-child::after{content:"escolhido";margin-left:8px;font-size:11px;font-weight:600;color:var(--petroleo);background:var(--verde);border-radius:999px;padding:2px 8px;vertical-align:1px}
 td{color:var(--ink-soft)}
-.proj-note{font-size:13.5px;color:var(--ink-mute);margin-bottom:8px}
-#projBody tr.cur td:first-child::after{content:none}
-#projBody em{font-style:normal;font-size:11px;font-weight:600;color:var(--petroleo);background:var(--verde);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:1px}
 .reco{border-left:3px solid #65CC65;padding:4px 0 4px 16px;color:var(--ink-soft);font-size:15px;display:flex;flex-direction:column;gap:6px}
 .reco b{color:var(--ink)}
 .disclaimer{display:flex;gap:12px;align-items:center;background:var(--verde);color:var(--petroleo);border-radius:12px;padding:14px 18px;font-size:14.5px;font-weight:600;line-height:1.45}
@@ -655,16 +652,6 @@ button.nx-t:hover{color:#2f7d2f}
           </table>
         </div>
 
-        <div class="proj">
-          <div class="eyebrow" style="margin-bottom:6px">Projeção por volume de mensagens</div>
-          <p class="proj-note">Quanto mais longo o atendimento, menor o percentual economizado, porque nem todas as mensagens saem em sequência. Perfil <span id="projMode">Moderado</span>, com <span id="projAt">3.000</span> atendimentos por mês.</p>
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Mensagens por atendimento</th><th>Economizadas por atendimento</th><th>% de economia</th><th>Economia/mês</th></tr></thead>
-              <tbody id="projBody"></tbody>
-            </table>
-          </div>
-        </div>
 
         <div class="reco" id="reco"></div>
 
@@ -872,10 +859,6 @@ button.nx-t:hover{color:#2f7d2f}
     const mx=Math.max(base,0.0001);
     $("chart").innerHTML=rows.map(([n,v,c])=>'<div class="crow '+c+'"><span class="nm">'+n+'</span><div class="track"><div class="fill" style="width:'+(v/mx*100).toFixed(1)+'%"></div></div><span class="val">'+fmtBRL(v)+'</span></div>').join("");
 
-    { const ns=[...new Set([5,10,15,20,30,50,100,Math.round(per)].filter(n=>n>1))].sort((a,b)=>a-b);
-      $("projMode").textContent=MODES[sel].label; $("projAt").textContent=fmtInt(at);
-      $("projBody").innerHTML=ns.map(n=>{ const r=rateFor(sel,n); const cur=n===Math.round(per);
-        return '<tr class="'+(cur?'sel cur':'')+'"><td>'+n+(cur?' <em>sua operação</em>':'')+'</td><td>'+(r*n).toLocaleString("pt-BR",{maximumFractionDigits:1})+'</td><td>'+fmtPct(r)+'</td><td>'+fmtBRL(at*n*r*cost)+'</td></tr>'; }).join(""); }
     $("tbody").innerHTML='<tr><td>Sem economia</td><td>0%</td><td>'+fmtInt(M)+'</td><td>'+fmtBRL(base)+'</td><td>–</td><td>0s</td></tr>'+
       Object.keys(MODES).map(k=>{const x=res[k];return '<tr class="'+(k===sel?"sel":"")+'"><td>'+MODES[k].label+'</td><td>'+fmtPct(x.save)+'</td><td>'+fmtInt(M*(1-x.save))+'</td><td>'+fmtBRL(M*(1-x.save)*cost)+'</td><td>'+fmtBRL(M*x.save*cost)+'</td><td>'+fmtSec(x.avgDelay)+'</td></tr>';}).join("");
 
