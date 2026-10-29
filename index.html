@@ -198,6 +198,8 @@ tr.sel td:first-child::after{content:"escolhido";margin-left:8px;font-size:11px;
 td{color:var(--ink-soft)}
 .reco{border-left:3px solid #65CC65;padding:4px 0 4px 16px;color:var(--ink-soft);font-size:15px;display:flex;flex-direction:column;gap:6px}
 .reco b{color:var(--ink)}
+.disclaimer{display:flex;gap:12px;align-items:center;background:var(--verde);color:var(--petroleo);border-radius:12px;padding:14px 18px;font-size:14.5px;font-weight:600;line-height:1.45}
+.disclaimer svg{flex:none}
 .foot{font-size:12.5px;color:var(--ink-mute);display:flex;flex-direction:column;gap:6px}
 .copy-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .toast{font-size:13px;color:var(--verde)}
@@ -651,10 +653,7 @@ button.nx-t:hover{color:#2f7d2f}
 
         <div class="reco" id="reco"></div>
 
-        <div class="foot">
-          <span>Como calculamos: percentual de economia = mensagens economizadas ÷ mensagens enviadas × 100. Mensagens economizadas = mensagens enviadas pelo atendente − envios agrupados ao WhatsApp. Economia em reais = mensagens economizadas × custo por mensagem. A espera média é o tempo entre o atendente enviar e o cliente receber.</span>
-          <span>O resultado real da sua operação aparece no Relatório de economia e eficiência de mensagens da Neppo, por grupo de atendimento e por agente.</span>
-        </div>
+        <div class="disclaimer" role="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><span>Esta simulação é uma estimativa. Os valores e percentuais podem variar de acordo com o dia a dia da sua operação e o uso da solução.</span></div>
       </div>
     </div>
     <div class="nav-row between">
@@ -974,8 +973,12 @@ button.nx-t:hover{color:#2f7d2f}
     doc.text(lines,L+14,y); y+=lines.length*14+20;
     // rodapé
     doc.setFontSize(8.5); doc.setTextColor(...GREY);
-    const foot=doc.splitTextToSize(clean("Como calculamos: percentual de economia = mensagens economizadas ÷ mensagens enviadas × 100. Mensagens economizadas = mensagens enviadas pelo atendente - envios agrupados ao WhatsApp. Economia em reais = mensagens economizadas × custo por mensagem. A espera média é o tempo entre o atendente enviar e o cliente receber. Ritmo "+(d.own?"medido no teste ("+d.n+" mensagens).":"de referência.")+" Simulação ilustrativa; o resultado real aparece no Relatório de economia e eficiência de mensagens da Neppo."),R-L);
-    doc.text(foot,L,Math.max(y,H-60));
+    doc.setFont("helvetica","bold"); doc.setFontSize(10);
+    const disc=doc.splitTextToSize(clean("Esta simulação é uma estimativa. Os valores e percentuais podem variar de acordo com o dia a dia da sua operação e o uso da solução."),R-L-28);
+    const bh=disc.length*13+20, by=Math.max(y,H-44-bh);
+    doc.setFillColor(...GRN); doc.roundedRect(L,by,R-L,bh,8,8,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...PET);
+    doc.text(disc,L+14,by+17);
     return asDoc? doc : doc.output("blob");
   }
   setMode("moderado"); updateStats(); renderRhythm(); generate(true);
