@@ -139,6 +139,8 @@ header.top img{height:34px;width:auto}
 .pdf-btn:disabled{opacity:.6;cursor:wait}
 .link-btn{background:none;border:0;padding:6px 4px;color:var(--ink-mute);font-size:13px;text-decoration:underline;text-underline-offset:3px}
 .link-btn:hover{color:var(--ink)}
+.cal-line{font-size:14px;color:var(--ink-soft);margin-top:8px;background:rgba(101,204,101,.10);border:1px solid rgba(101,204,101,.3);border-radius:10px;padding:10px 12px}
+.cal-line b{color:var(--verde)}
 .formula-line{font-size:13px;color:var(--ink-mute);margin-top:10px}
 .formula-line span{color:var(--verde);font-variant-numeric:tabular-nums}
 .ghost{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:9px 14px;font-size:14px;font-weight:500}
@@ -150,11 +152,11 @@ header.top img{height:34px;width:auto}
 
 /* Diagnóstico */
 .diag-grid{display:flex;flex-direction:column;gap:20px}
-.diag-grid .form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;align-items:end}
+.diag-grid .form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,.9fr);gap:20px;align-items:end}
 .diag-grid .form .field label{min-height:0}
 .diag-grid .form .rhythm{grid-column:1 / span 3;align-self:stretch;display:grid;align-content:center}
 .diag-grid .form .field input,.diag-grid .form .field select{height:48px}
-.diag-grid .form .cta{grid-column:4;align-self:stretch}
+.diag-grid .form .cta{grid-column:auto;height:48px;padding:0 16px}
 @media (max-width:1000px){.diag-grid .form{grid-template-columns:repeat(2,minmax(0,1fr))}.diag-grid .form .rhythm,.diag-grid .form .cta{grid-column:1 / -1}}
 @media (max-width:560px){.diag-grid .form{grid-template-columns:minmax(0,1fr)}}
 .form{display:flex;flex-direction:column;gap:14px}
@@ -196,6 +198,9 @@ th{font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;
 tr.sel td{color:var(--ink);font-weight:600}
 tr.sel td:first-child::after{content:"escolhido";margin-left:8px;font-size:11px;font-weight:600;color:var(--petroleo);background:var(--verde);border-radius:999px;padding:2px 8px;vertical-align:1px}
 td{color:var(--ink-soft)}
+.proj-note{font-size:13.5px;color:var(--ink-mute);margin-bottom:8px}
+#projBody tr.cur td:first-child::after{content:none}
+#projBody em{font-style:normal;font-size:11px;font-weight:600;color:var(--petroleo);background:var(--verde);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:1px}
 .reco{border-left:3px solid #65CC65;padding:4px 0 4px 16px;color:var(--ink-soft);font-size:15px;display:flex;flex-direction:column;gap:6px}
 .reco b{color:var(--ink)}
 .disclaimer{display:flex;gap:12px;align-items:center;background:var(--verde);color:var(--petroleo);border-radius:12px;padding:14px 18px;font-size:14.5px;font-weight:600;line-height:1.45}
@@ -565,7 +570,7 @@ button.nx-t:hover{color:#2f7d2f}
     <div class="sec-head">
       <span class="eyebrow">Etapa 2 · Diagnóstico</span>
       <h2>Quanto a sua operação deixa de pagar</h2>
-      <p>O diagnóstico usa o ritmo com que você digitou no teste para calcular quantos envios cada perfil evitaria. Depois aplica esse percentual ao volume e ao custo por mensagem da sua operação.</p>
+      <p>Informe os dados da sua operação para estimar quantas mensagens e quanto custo cada perfil de economia reduz por mês.</p>
     </div>
 
     <div class="diag-grid" id="slot3">
@@ -590,7 +595,6 @@ button.nx-t:hover{color:#2f7d2f}
             <option value="agressivo">Agressivo</option>
           </select>
         </div>
-        <div class="rhythm" id="rhythm"></div>
         <button type="submit" class="cta">Gerar diagnóstico</button>
       </form>
     </div>
@@ -651,6 +655,17 @@ button.nx-t:hover{color:#2f7d2f}
           </table>
         </div>
 
+        <div class="proj">
+          <div class="eyebrow" style="margin-bottom:6px">Projeção por volume de mensagens</div>
+          <p class="proj-note">Quanto mais longo o atendimento, menor o percentual economizado, porque nem todas as mensagens saem em sequência. Perfil <span id="projMode">Moderado</span>, com <span id="projAt">3.000</span> atendimentos por mês.</p>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Mensagens por atendimento</th><th>Economizadas por atendimento</th><th>% de economia</th><th>Economia/mês</th></tr></thead>
+              <tbody id="projBody"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="reco" id="reco"></div>
 
         <div class="disclaimer" role="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><span>Esta simulação é uma estimativa. Os valores e percentuais podem variar de acordo com o dia a dia da sua operação e o uso da solução.</span></div>
@@ -694,6 +709,9 @@ button.nx-t:hover{color:#2f7d2f}
   const fmtSec = n => n.toLocaleString("pt-BR",{maximumFractionDigits:1})+"s";
 
   const PRICE=0.05;
+  // Ajuste do histórico à faixa validada pela Neppo: 0% agrupado no teste → 20%; 100% → 40%
+  const CAL = r => 0.20 + 0.20*Math.min(1, Math.max(0, r));
+  const per10 = r => (r*10).toLocaleString("pt-BR",{maximumFractionDigits:1});
   function updateStats(){
     const sends = sent + (group?1:0); // o grupo aberto vira 1 envio
     const saved = Math.max(0, written - sends);
@@ -818,12 +836,20 @@ button.nx-t:hover{color:#2f7d2f}
   }
   function usingOwn(){ return rhythm.length>=6; }
   function currentRhythm(){ return usingOwn()? rhythm : SAMPLE; }
-  function renderRhythm(){
-    const own=usingOwn();
-    $("rhythm").innerHTML = own
-      ? '<b>Usando o seu ritmo:</b> '+rhythm.length+' mensagens digitadas por você no teste.'
-      : '<b>Usando um ritmo de referência</b> ('+SAMPLE.length+' mensagens de um atendimento típico). Digite ao menos 6 mensagens no teste para o cálculo usar o seu ritmo'+(rhythm.length?' ('+rhythm.length+' até agora)':'')+'.';
+  // Percentuais de economia por perfil, conforme a faixa validada internamente (20% a 40%)
+  // Percentual de economia por perfil (base de clientes Neppo): a cada 10 mensagens, 2,1 / 3,3 / 4,2 economizadas
+  const RATES={conservador:0.21, moderado:0.33, agressivo:0.42};
+  // Projeção por volume: a referência é 10 mensagens por atendimento. Quanto mais mensagens no atendimento,
+  // menor o percentual economizado (nem toda mensagem sai em sequência). Curva de potência com expoente 0,85.
+  const ELAST=0.85;
+  function rateFor(k,n){
+    if(!(n>1)) return 0;
+    const saved10 = RATES[k]*10;                       // economizadas a cada 10 mensagens
+    let saved = saved10 * Math.pow(n/10, ELAST);        // economizadas em n mensagens
+    saved = Math.min(saved, n-1);                       // no máximo n-1 (sempre sai pelo menos 1 envio)
+    return saved/n;
   }
+  function renderRhythm(){}
 
   let lastSummary="", lastData=null;
   function generate(isInitial){
@@ -831,11 +857,11 @@ button.nx-t:hover{color:#2f7d2f}
     const sel=$("fMode").value;
     const M=at*per, base=M*cost;
     const ts=currentRhythm();
-    const res={}; Object.keys(MODES).forEach(k=>res[k]=replay(ts,k));
+    const res={}; Object.keys(MODES).forEach(k=>{ res[k]=replay(SAMPLE,k); res[k].save=rateFor(k,per); });
     const r=res[sel];
     const avoided=M*r.save, saveMonth=avoided*cost;
 
-    $("rSub").textContent = (isInitial?"Exemplo com valores iniciais. ":"")+fmtInt(at)+" atendimentos/mês · "+fmtInt(per)+" mensagens por atendimento · "+fmtInt(ag)+" atendentes · "+fmtCost(cost)+" por mensagem · "+(usingOwn()?"seu ritmo":"ritmo de referência");
+    $("rSub").textContent = (isInitial?"Exemplo com valores iniciais. ":"")+fmtInt(at)+" atendimentos/mês · "+fmtInt(per)+" mensagens por atendimento · "+fmtInt(ag)+" atendentes · "+fmtCost(cost)+" por mensagem";
     $("kMonth").textContent=fmtBRL(saveMonth);
     $("kYear").textContent=fmtBRL(saveMonth*12)+" em 12 meses · "+fmtBRL(saveMonth/ag)+" por atendente";
     $("kMsgs").textContent=fmtInt(avoided);
@@ -846,32 +872,34 @@ button.nx-t:hover{color:#2f7d2f}
     const mx=Math.max(base,0.0001);
     $("chart").innerHTML=rows.map(([n,v,c])=>'<div class="crow '+c+'"><span class="nm">'+n+'</span><div class="track"><div class="fill" style="width:'+(v/mx*100).toFixed(1)+'%"></div></div><span class="val">'+fmtBRL(v)+'</span></div>').join("");
 
+    { const ns=[...new Set([5,10,15,20,30,50,100,Math.round(per)].filter(n=>n>1))].sort((a,b)=>a-b);
+      $("projMode").textContent=MODES[sel].label; $("projAt").textContent=fmtInt(at);
+      $("projBody").innerHTML=ns.map(n=>{ const r=rateFor(sel,n); const cur=n===Math.round(per);
+        return '<tr class="'+(cur?'sel cur':'')+'"><td>'+n+(cur?' <em>sua operação</em>':'')+'</td><td>'+(r*n).toLocaleString("pt-BR",{maximumFractionDigits:1})+'</td><td>'+fmtPct(r)+'</td><td>'+fmtBRL(at*n*r*cost)+'</td></tr>'; }).join(""); }
     $("tbody").innerHTML='<tr><td>Sem economia</td><td>0%</td><td>'+fmtInt(M)+'</td><td>'+fmtBRL(base)+'</td><td>–</td><td>0s</td></tr>'+
       Object.keys(MODES).map(k=>{const x=res[k];return '<tr class="'+(k===sel?"sel":"")+'"><td>'+MODES[k].label+'</td><td>'+fmtPct(x.save)+'</td><td>'+fmtInt(M*(1-x.save))+'</td><td>'+fmtBRL(M*(1-x.save)*cost)+'</td><td>'+fmtBRL(M*x.save*cost)+'</td><td>'+fmtSec(x.avgDelay)+'</td></tr>';}).join("");
 
     // Recomendação
     const c=res.conservador, a=res.agressivo, mo=res.moderado;
-    let rec;
-    if(a.save-c.save < 0.08){
-      rec='<span><b>O Conservador já captura quase toda a economia.</b> Neste ritmo, o Agressivo evita só '+fmtPct(a.save-c.save)+' a mais de envios, com '+fmtSec(a.avgDelay-c.avgDelay)+' a mais de espera por mensagem. Comece pelo Conservador.</span>';
-    } else if(a.save-mo.save < 0.06){
-      rec='<span><b>O Moderado é o melhor equilíbrio neste ritmo.</b> Ele chega perto da economia do Agressivo ('+fmtPct(mo.save)+' contra '+fmtPct(a.save)+') com espera média de '+fmtSec(mo.avgDelay)+'.</span>';
-    } else {
-      rec='<span><b>Neste ritmo, com pausas mais longas entre as mensagens, o Agressivo faz diferença.</b> Ele evita '+fmtPct(a.save)+' dos envios, contra '+fmtPct(mo.save)+' do Moderado. Vale usar em grupos onde alguns segundos a mais de espera não pesam, como pós-venda e cobrança, e manter o Moderado nos grupos de primeiro contato.</span>';
-    }
+    let rec='<span><b>O Moderado é o ponto de partida para a maioria das operações.</b> Ele reduz '+fmtPct(mo.save)+' das mensagens com espera média de '+fmtSec(mo.avgDelay)+'. Use o Agressivo ('+fmtPct(a.save)+') em grupos onde alguns segundos a mais não pesam, como pós-venda e cobrança, e o Conservador ('+fmtPct(c.save)+') onde a resposta precisa ser mais imediata.</span>';
     rec+='<span>O perfil é definido por grupo de atendimento. Você pode usar perfis diferentes para vendas, suporte e pós-venda, e acompanhar o resultado de cada um no relatório.</span>';
     $("reco").innerHTML=rec;
 
     lastSummary=[
       "Diagnóstico · Economia de mensagens Neppo",
       "Volume: "+fmtInt(at)+" atendimentos/mês × "+fmtInt(per)+" mensagens do atendente = "+fmtInt(M)+" mensagens/mês",
-      "Atendentes: "+fmtInt(ag)+" · Custo por mensagem: "+fmtCost(cost)+" · Ritmo: "+(usingOwn()?"medido no teste ("+rhythm.length+" mensagens)":"referência"),
+      "Atendentes: "+fmtInt(ag)+" · Custo por mensagem: "+fmtCost(cost)+"",
       "Sem economia: "+fmtBRL(base)+"/mês",
       ...Object.keys(MODES).map(k=>MODES[k].label+": "+fmtPct(res[k].save)+" de economia · "+fmtBRL(M*res[k].save*cost)+"/mês de economia · espera média "+fmtSec(res[k].avgDelay)),
       "Perfil avaliado ("+MODES[sel].label+"): "+fmtBRL(saveMonth)+"/mês · "+fmtBRL(saveMonth*12)+" em 12 meses · "+fmtBRL(saveMonth/ag)+"/mês por atendente"
     ].join("\n");
     lastData={at,per,ag,cost,sel,M,base,res,saveMonth,avoided,own:usingOwn(),n:rhythm.length};
   }
+  // Recalcula na hora sempre que um campo muda (sem depender do botão)
+  ["fAt","fMsg","fAg","fMode"].forEach(id=>{
+    const el=$(id);
+    ["input","change"].forEach(ev=>el.addEventListener(ev,()=>{ renderRhythm(); if(!$("resultado").hidden){ generatedByUser=true; generate(false); } }));
+  });
   $("dform").addEventListener("submit",e=>{ e.preventDefault(); generatedByUser=true; generate(false); if(!$("resultado").hidden){ $("toast").textContent="Diagnóstico atualizado"; setTimeout(()=>$("toast").textContent="",2500); } else go(4); });
   $("copy").addEventListener("click",()=>{
     const done=()=>{ $("toast").textContent="Resumo copiado"; setTimeout(()=>$("toast").textContent="",2500); };
